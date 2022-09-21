@@ -158,3 +158,10 @@
               (ns-unmap '~ns-sym '~sym)
               (intern '~ns-sym '~sym ~form))
            `(def ~sym ~form))))))
+
+(defn apply-fn-times
+  "Applies given function f for the given times t on the result of
+  each application, starting with p.
+  For ex (apply-fn-times inc 1 3) is equivalent to (inc(inc(inc 1)))"
+  [f p t]
+  ((apply comp (repeat t f)) p))
