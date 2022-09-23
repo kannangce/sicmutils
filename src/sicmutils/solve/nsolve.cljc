@@ -22,6 +22,12 @@
 (declare equation-expression)
 (declare apply-substitutions-to-equation)
 (declare solve-incremental)
+(declare flush-tautologies)
+(declare next-substitutions)
+(declare next-equations)
+(declare contradictory-equation?)
+(declare backsubstitute-equation)
+(declare backsubstitute-substitution)
 ;; TODO ends
 
 ;; Assumptions
@@ -41,7 +47,36 @@
   (binding [*outstanding-contradictions* contradictions]
     (fail)))
 
+(defn use-new-substitution [newsubst oldresids oldsubsts oldtough
+                            succeed fail]
+  (let [new-substitutions
+        (cons newsubst (next-substitutions newsubst oldsubsts))
+        new-equations
+        (flush-tautologies (next-equations newsubst oldresids))
+        new-tough
+        (flush-tautologies (next-equations newsubst oldtough))]
+    (let [contradictions
+          (concat (filter contradictory-equation? new-equations)
+                  (filter contradictory-equation? new-tough))]
+      (cond (nil? contradictions)
+            (succeed new-equations new-substitutions new-tough fail)
+            :else
+            (contradiction-failure contradictions fail)))))
+
 
 (defn contradictory-equation? [eqn]
-        (let [expr (equation-expression eqn)]
-          (and (number? expr) (not (zero? expr)))))
+  (let [expr (equation-expression eqn)]
+    (and (number? expr) (not (zero? expr)))))
+
+(defn flush-tautologies [equations]
+  (filter #(let [expr (equation-expression %)]
+             (not (and (number? expr) (zero? expr))))
+          equations))
+
+(defn next-equations [substitution equations]
+  (map #(backsubstitute-equation substitution %)
+       equations))
+
+(defn next-substitutions [new-substitution substitutions]
+  (map #(backsubstitute-substitution new-substitution %)
+       substitutions))
