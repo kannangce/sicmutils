@@ -17,6 +17,8 @@
 
 (def *outstanding-contradictions*)
 (def *solver-state*)
+;;; There may be two roots to a quadratic!
+(def *root-premises* '())
 
 ;TODO
 (declare equation-expression)
@@ -28,6 +30,10 @@
 (declare contradictory-equation?)
 (declare backsubstitute-equation)
 (declare backsubstitute-substitution)
+(declare isolatable?)
+(declare make-substitution)
+(declare equation-justifications)
+(declare just-union)
 ;; TODO ends
 
 ;; Assumptions
@@ -80,3 +86,17 @@
 (defn next-substitutions [new-substitution substitutions]
   (map #(backsubstitute-substitution new-substitution %)
        substitutions))
+
+(defn isolate-var [var eqn succeed fail]
+  ;; succeed = (lambda (new-substitution) ...)
+  ;; fail    = (lambda () ...)
+  (isolatable? var (equation-expression eqn)
+               (fn [value fail]
+                 ;;(pp `(isolate ,*root-premises* ,eqn ,value))
+                 (succeed
+                   (make-substitution var value
+                                      (just-union *root-premises*
+                                                  (equation-justifications eqn)))
+                   fail))
+               fail))
+
