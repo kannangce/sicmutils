@@ -1,5 +1,7 @@
 (ns sicmutils.solve.nsolve
-  (:require [sicmutils.util.scheme :refer [car cadr caddr cadddr]]))
+  (:require [sicmutils.util.scheme :refer [car cadr caddr cadddr]]
+            [sicmutils.expression.analyze :as alz]
+            [sicmutils.simplify :as smlfy]))
 
 
 (defn make-solution
@@ -39,6 +41,7 @@
 ;; Assumptions
 ;; Assuming ~0? as zero?
 ;; Assuming fluid-let as binding
+;; Assuming fpf:analyzer is smlfy/poly-analyzer as per the comment in smlfy/poly-analyzer
 ;; Assumption ends
 
 (defn correct-substitutions? [equations substitutions]
@@ -100,3 +103,13 @@
                    fail))
                fail))
 
+
+(defn fpf-analyze [expr cont]
+  ;; cont = (lambda (analyzed kernel-map) ...)
+  ;(alz/initializer smlfy/poly-analyzer)
+  ; Why do they even call ((initializer fpf:analyzer)), assuming the function call is pure.
+  (let [analysis
+        ((alz/expression-analyzer smlfy/poly-analyzer)
+         expr)]
+    (cont analysis
+          ((alz/auxiliary-variable-fetcher smlfy/poly-analyzer)))))
